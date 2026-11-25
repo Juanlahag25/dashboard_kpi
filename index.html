@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#38281f">
+    <meta
+        name="description"
+        content="Dashboard demo untuk analisis kesehatan dan sinkronisasi stok inventory."
+    >
+    <title>Blibli Seller — Inventory Sync &amp; Stock Analytics</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        espresso: '#38281f',
+                        coffee: '#634735',
+                        copper: '#bc704f',
+                        honey: '#d3a64f',
+                        sage: '#66806b',
+                        canvas: '#f3eee7',
+                        surface: '#fffdfa'
+                    },
+                    boxShadow: {
+                        card: '0 12px 32px rgba(57, 39, 27, .07)'
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+    <!-- Lucide icons -->
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+
+    <!-- GSAP + ScrollTrigger -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+
+    <!-- Lenis smooth scroll -->
+    <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+
+    <style>
+        :root {
+            color-scheme: light;
+            --page: #f3eee7;
+            --surface: #fffdfa;
+            --ink: #30251f;
+            --muted: #77685d;
+            --line: #e9dfd4;
+            --espresso: #38281f;
+            --coffee: #634735;
+            --copper: #bc704f;
+            --honey: #d3a64f;
+            --sage: #66806b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: auto;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            background:
+                radial-gradient(ellipse at 10% 0%, rgba(211, 166, 79, .13), transparent 30rem),
+                linear-gradient(180deg, #f8f4ee 0, var(--page) 34rem, #f2ede6 100%);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        a:focus-visible {
+            outline: 3px solid rgba(188, 112, 79, .4);
+            outline-offset: 3px;
+        }
+
+        .header-shell {
+            position: relative;
+            z-index: 20;
+            overflow: visible;
+            background:
+                radial-gradient(ellipse at 84% -50%, rgba(188, 112, 79, .35), transparent 34rem),
+                linear-gradient(112deg, #30231d 0%, #493326 58%, #614534 100%);
+            box-shadow: 0 10px 28px rgba(48, 37, 31, .16);
+        }
+
+        .header-shell::after {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--honey), var(--copper), #e5c27a);
+            content: "";
+        }
+
+        .header-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            max-width: 1440px;
+            min-height: 120px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            margin: 0 auto;
+            padding: 1rem 2rem 1.15rem;
+        }
+
+        .header-left {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: .75rem;
+        }
+
+        .profile-dropdown {
+            position: relative;
+            z-index: 30;
+        }
+
+        .profile-trigger {
+            display: flex;
+            min-height: 36px;
+            align-items: center;
+            gap: .55rem;
+            padding: .25rem .65rem .25rem .3rem;
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: .75rem;
+            background: rgba(255, 255, 255, .08);
+            color: #fffaf3;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 160ms ease, border-color 160ms ease;
+        }
+
+        .profile-trigger:hover,
+        .profile-dropdown:focus-within .profile-trigger {
+            border-color: rgba(255, 255, 255, .28);
+            background: rgba(255, 255, 255, .14);
+        }
+
+        .profile-avatar {
+            display: inline-grid;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 auto;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, .28);
+            border-radius: 50%;
+            background: linear-gradient(145deg, #e1bb84, #b97856);
+            color: #39271e;
+            font-size: .68rem;
+            font-weight: 850;
+        }
+
+        .profile-trigger-copy {
+            display: grid;
+            gap: .08rem;
+        }
+
+        .profile-trigger-name {
+            color: #fffaf3;
+            font-size: .76rem;
+            font-weight: 750;
+            line-height: 1.1;
+        }
+
+        .profile-trigger-role {
+            color: rgba(255, 248, 238, .68);
+            font-size: .66rem;
+            line-height: 1.1;
+        }
+
+        .profile-chevron {
+            color: rgba(255, 248, 238, .7);
+            transition: transform 160ms ease;
+        }
+
+        .profile-dropdown:hover .profile-chevron,
+        .profile-dropdown:focus-within .profile-chevron {
+            transform: rotate(180deg);
+        }
+
+        .profile-popover {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: min(320px, calc(100vw - 2rem));
+            padding-top: .65rem;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(6px);
+            transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
+        }
+
+        .profile-dropdown:hover .profile-popover,
+        .profile-dropdown:focus-within .profile-popover {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .profile-popover-card {
+            padding: 1rem;
+            border: 1px solid #e8dbcd;
+            border-radius: 1rem;
+            background: var(--surface);
+            color: var(--ink);
+            box-shadow: 0 20px 50px rgba(34, 24, 18, .24);
+        }
+
+        .profile-heading {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+        }
+
+        .profile-avatar-large {
+            width: 48px;
+            height: 48px;
+            border-color: #ead9c5;
+            font-size: .9rem;
+        }
+
+        .profile-popover-name {
+            margin: 0;
+            color: var(--espresso);
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .profile-popover-role {
+            margin: .2rem 0 0;
+            color: #a7593c;
+            font-size: .76rem;
+            font-weight: 700;
+        }
+
+        .profile-divider {
+            height: 1px;
+            margin: .9rem 0;
+            background: #eee5da;
+        }
+
+        .profile-detail {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            padding: .45rem 0;
+        }
+
+        .profile-detail-icon {
+            display: grid;
+            width: 32px;
+            height: 32px;
+            flex: 0 0 auto;
+            place-items: center;
+            border-radius: .65rem;
+            background: #f7f0e8;
+            color: var(--coffee);
+        }
+
+        .profile-detail-label {
+            margin: 0;
+            color: #9c8d80;
+            font-size: .68rem;
+        }
+
+        .profile-detail-value {
+            margin: .1rem 0 0;
+            color: var(--espresso);
+            font-size: .77rem;
+            font-weight: 650;
+        }
+
+        .profile-online {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            margin-top: .8rem;
+            padding: .6rem .7rem;
+            border: 1px solid #dce9d9;
+            border-radius: .7rem;
+            background: #f0f6ee;
+            color: #557357;
+            font-size: .7rem;
+            font-weight: 650;
+        }
+
+        .profile-online-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #55a66d;
+            box-shadow: 0 0 0 3px rgba(85, 166, 109, .13);
+        }
+
+        .brand-row {
+            display: flex;
+            min-width: 0;
+            align-items: center;
+            gap: .85rem;
+        }
+
+        .brand-icon {
+            display: grid;
+            width: 48px;
+            height: 48px;
+            flex: 0 0 auto;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 15px;
+            background: linear-gradient(145deg, #926344, #6e4932);
+            color: #fffaf3;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, .23);
+        }
+
+        .brand-eyebrow {
+            margin: 0 0 .25rem;
+            color: #e3b27e;
+            font-size: .68rem;
+            font-weight: 800;
+            letter-spacing: .19em;
+            text-transform: uppercase;
+        }
+
+        .brand-title {
+            margin: 0;
+            color: #fffaf3;
+            font-size: clamp(1.05rem, 1.6vw, 1.4rem);
+            font-weight: 850;
+            letter-spacing: -.035em;
+            line-height: 1.25;
+        }
+
+        .brand-description {
+            margin: .35rem 0 0;
+            color: rgba(255, 248, 238, .68);
+            font-size: .82rem;
+            line-height: 1.45;
+        }
+
+        .title-word {
+            display: inline-block;
+            margin-right: .25em;
+            will-change: transform, opacity;
+        }
+
+        .header-controls {
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            gap: .7rem;
+        }
+
+        .api-status {
+            display: flex;
+            min-height: 46px;
+            align-items: center;
+            gap: .65rem;
+            padding: .55rem .8rem;
+            border: 1px solid rgba(190, 218, 183, .18);
+            border-radius: .9rem;
+            background: rgba(255, 255, 255, .09);
+            backdrop-filter: blur(12px);
+        }
+
+        .api-indicator {
+            width: 9px;
+            height: 9px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background: #6bc398;
+            box-shadow: 0 0 0 4px rgba(107, 195, 152, .12);
+        }
+
+        .api-title,
+        .api-time {
+            margin: 0;
+            font-size: .7rem;
+            line-height: 1.35;
+        }
+
+        .api-title {
+            color: #e2f0dc;
+            font-weight: 750;
+        }
+
+        .api-time {
+            color: rgba(255, 248, 238, .72);
+        }
+
+        .sync-button {
+            display: inline-flex;
+            min-width: 132px;
+            min-height: 46px;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            gap: .55rem;
+            padding: .7rem 1rem;
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: .9rem;
+            background: linear-gradient(135deg, #cb815c, #ad6245);
+            color: #fff;
+            font-size: .82rem;
+            font-weight: 750;
+            line-height: 1;
+            white-space: nowrap;
+            box-shadow: 0 8px 18px rgba(19, 12, 8, .22);
+            cursor: pointer;
+            transition: filter 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+        }
+
+        .sync-button:hover:not(:disabled) {
+            filter: brightness(1.08);
+            box-shadow: 0 12px 24px rgba(19, 12, 8, .28);
+            transform: translateY(-2px);
+        }
+
+        .sync-button:disabled {
+            cursor: wait;
+            opacity: .75;
+        }
+
+        .main-content {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 2rem 2rem 2.5rem;
+        }
+
+        .panel {
+            border: 1px solid rgba(224, 211, 196, .82);
+            border-radius: 1.2rem;
+            background: var(--surface);
+            box-shadow: 0 12px 32px rgba(57, 39, 27, .06);
+        }
+
+        .kpi-card {
+            position: relative;
+            min-height: 174px;
+            overflow: hidden;
+            transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+        }
+
+        .kpi-card::before {
+            position: absolute;
+            top: 0;
+            right: 1.35rem;
+            left: 1.35rem;
+            height: 3px;
+            border-radius: 0 0 999px 999px;
+            background: var(--coffee);
+            content: "";
+        }
+
+        .kpi-card:nth-child(2)::before { background: var(--honey); }
+        .kpi-card:nth-child(3)::before { background: var(--copper); }
+        .kpi-card:nth-child(4)::before { background: var(--sage); }
+
+        .kpi-card:hover {
+            border-color: #d7c6b5;
+            box-shadow: 0 18px 40px rgba(57, 39, 27, .11);
+            transform: translateY(-3px);
+        }
+
+        .kpi-icon {
+            display: grid;
+            width: 43px;
+            height: 43px;
+            place-items: center;
+            border: 1px solid #efe6dc;
+            border-radius: 14px;
+            background: #f8f2eb;
+            color: var(--coffee);
+        }
+
+        .kpi-icon.warn { color: #a77a31; }
+        .kpi-icon.alert { color: var(--copper); }
+        .kpi-icon.safe { color: var(--sage); }
+
+        .chart-panel {
+            min-height: 380px;
+            background:
+                linear-gradient(145deg, rgba(255, 255, 255, .82), transparent 70%),
+                var(--surface);
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 285px;
+        }
+
+        .table-panel {
+            overflow: hidden;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        .table-scroll table {
+            min-width: 1050px;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table-scroll thead {
+            background: #f7f1e9;
+        }
+
+        .table-scroll th {
+            padding: .9rem 1rem;
+            color: #796a5d;
+            font-size: .67rem;
+            letter-spacing: .09em;
+            text-align: left;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .table-scroll td {
+            border-top: 1px solid #f0e9e1;
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        .table-scroll tbody tr {
+            transition: background-color 140ms ease;
+        }
+
+        .table-scroll tbody tr:hover {
+            background: #fcf7f0;
+        }
+
+        .filter-control {
+            min-height: 45px;
+            width: 100%;
+            border: 1px solid #e6dbcf;
+            border-radius: .8rem;
+            background: #fffefa;
+            padding: .65rem .8rem;
+            color: var(--ink);
+            box-shadow: 0 2px 5px rgba(57, 39, 27, .025);
+        }
+
+        .filter-control:focus {
+            border-color: var(--copper);
+            box-shadow: 0 0 0 4px rgba(188, 112, 79, .12);
+            outline: none;
+        }
+
+        .filter-control::placeholder {
+            color: #a3978d;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            padding: .28rem .65rem;
+            font-size: .7rem;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .badge-synced {
+            border-color: #d5e5d4;
+            background: #edf4ec;
+            color: #4f7055;
+        }
+
+        .badge-discrepancy {
+            border-color: #eeddb8;
+            background: #fbf1dc;
+            color: #956c25;
+        }
+
+        .badge-oos {
+            border-color: #efcfc3;
+            background: #fae9e3;
+            color: #a94f3b;
+        }
+
+        .badge-fast {
+            color: #57745b;
+        }
+
+        .badge-slow {
+            color: #8b8077;
+        }
+
+        .secondary-button,
+        .export-button {
+            display: inline-flex;
+            min-height: 36px;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            border: 1px solid #ddc9b8;
+            border-radius: .7rem;
+            background: #fffdfa;
+            padding: .45rem .75rem;
+            color: var(--coffee);
+            font-size: .75rem;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+        }
+
+        .secondary-button:hover:not(:disabled),
+        .export-button:hover {
+            border-color: var(--copper);
+            background: #f8eee5;
+            color: #a7593c;
+            transform: translateY(-1px);
+        }
+
+        .secondary-button:disabled {
+            cursor: wait;
+            opacity: .65;
+        }
+
+        .toast {
+            position: fixed;
+            right: 1.25rem;
+            bottom: 1.25rem;
+            z-index: 100;
+            max-width: min(420px, calc(100vw - 2.5rem));
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: .85rem;
+            background: #30251f;
+            padding: .85rem 1rem;
+            color: white;
+            font-size: .875rem;
+            font-weight: 650;
+            box-shadow: 0 14px 34px rgba(48, 37, 31, .24);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background: #a43e32;
+        }
+
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, .4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1023px) {
+            .header-inner {
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header-inner {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .brand-icon {
+                width: 42px;
+                height: 42px;
+            }
+
+            .brand-description {
+                font-size: .75rem;
+            }
+
+            .header-controls {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .api-status {
+                flex: 1;
+            }
+
+            .sync-button {
+                min-width: 120px;
+            }
+
+            .main-content {
+                padding: 1.25rem 1rem 1.75rem;
+            }
+
+            .chart-panel {
+                min-height: 340px;
+            }
+
+            .chart-wrap {
+                height: 250px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                animation-duration: .01ms !important;
+                transition-duration: .01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header-shell">
+        <div class="header-inner">
+            <div class="header-left">
+                <div class="profile-dropdown">
+                    <button
+                        class="profile-trigger"
+                        type="button"
+                        aria-label="Profil Stevanus, Admin"
+                        aria-haspopup="true"
+                    >
+                        <span class="profile-avatar" aria-hidden="true">ST</span>
+                        <span class="profile-trigger-copy">
+                            <span class="profile-trigger-name">Stevanus</span>
+                            <span class="profile-trigger-role">Admin</span>
+                        </span>
+                        <i data-lucide="chevron-down" class="profile-chevron h-4 w-4" aria-hidden="true"></i>
+                    </button>
+
+                    <div class="profile-popover" role="dialog" aria-label="Profil karyawan">
+                        <div class="profile-popover-card">
+                            <div class="profile-heading">
+                                <span class="profile-avatar profile-avatar-large" aria-hidden="true">ST</span>
+                                <div>
+                                    <p class="profile-popover-name">Stevanus</p>
+                                    <p class="profile-popover-role">Administrator</p>
+                                </div>
+                            </div>
+
+                            <div class="profile-divider"></div>
+
+                            <div class="profile-detail">
+                                <span class="profile-detail-icon">
+                                    <i data-lucide="shield-check" class="h-4 w-4" aria-hidden="true"></i>
+                                </span>
+                                <div>
+                                    <p class="profile-detail-label">Jabatan</p>
+                                    <p class="profile-detail-value">Admin KPI &amp; Inventory</p>
+                                </div>
+                            </div>
+
+                            <div class="profile-detail">
+                                <span class="profile-detail-icon">
+                                    <i data-lucide="layout-dashboard" class="h-4 w-4" aria-hidden="true"></i>
+                                </span>
+                                <div>
+                                    <p class="profile-detail-label">Akses</p>
+                                    <p class="profile-detail-value">Dashboard Sinkronisasi Stok</p>
+                                </div>
+                            </div>
+
+                            <div class="profile-online">
+                                <span class="profile-online-dot"></span>
+                                Sedang mengakses dashboard
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="brand-row">
+                    <div class="brand-icon" aria-hidden="true">
+                        <i data-lucide="package-check" class="h-6 w-6"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="brand-eyebrow">Seller Center Analytics</p>
+                        <h1 id="dashboardTitle" class="brand-title">
+                            Blibli Seller - Inventory Sync &amp; Stock Analytics
+                        </h1>
+                        <p class="brand-description">
+                            Pantau kesehatan stok dan sinkronisasi katalog dalam satu dashboard.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <div class="api-status">
+                    <span class="api-indicator" aria-hidden="true"></span>
+                    <div>
+                        <p class="api-title">Demo Mode · Local Storage</p>
+                        <p class="api-time">Last Sync: <span id="lastSync">Belum ada sinkronisasi</span></p>
+                    </div>
+                </div>
+
+                <button id="syncAllButton" class="sync-button" type="button">
+                    <i data-lucide="refresh-cw" class="h-4 w-4" aria-hidden="true"></i>
+                    <span>Sync Now</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content space-y-6">
+        <section aria-label="Ringkasan KPI" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <article class="panel kpi-card p-5">
+                <div class="flex items-start justify-between">
+                    <div class="kpi-icon"><i data-lucide="boxes" class="h-5 w-5"></i></div>
+                    <span class="badge badge-synced">Active SKUs</span>
+                </div>
+                <p class="mt-4 text-sm font-semibold text-stone-500">Total SKU Tersinkronisasi</p>
+                <div class="mt-1 flex items-end gap-2">
+                    <p id="kpiSynced" class="text-3xl font-extrabold tracking-tight text-espresso">0/0</p>
+                    <p id="kpiSyncRate" class="mb-1 text-sm font-bold text-emerald-700">0% Synced</p>
+                </div>
+            </article>
+
+            <article class="panel kpi-card p-5">
+                <div class="flex items-start justify-between">
+                    <div class="kpi-icon warn"><i data-lucide="triangle-alert" class="h-5 w-5"></i></div>
+                    <span class="badge" style="background:#fbf3e2;color:#926b28">Perlu perhatian</span>
+                </div>
+                <p class="mt-4 text-sm font-semibold text-stone-500">Stok Menipis</p>
+                <div class="mt-1 flex items-end gap-2">
+                    <p id="kpiLowStock" class="text-3xl font-extrabold tracking-tight text-espresso">0</p>
+                    <p class="mb-1 text-sm text-stone-500">produk di bawah minimum</p>
+                </div>
+            </article>
+
+            <article class="panel kpi-card p-5">
+                <div class="flex items-start justify-between">
+                    <div class="kpi-icon alert"><i data-lucide="git-compare-arrows" class="h-5 w-5"></i></div>
+                    <span class="badge" style="background:#f9eee8;color:#a75e42">ERP vs Blibli</span>
+                </div>
+                <p class="mt-4 text-sm font-semibold text-stone-500">Selisih Stok</p>
+                <div class="mt-1 flex items-end gap-2">
+                    <p id="kpiDiscrepancies" class="text-3xl font-extrabold tracking-tight text-espresso">0</p>
+                    <p class="mb-1 text-sm text-stone-500">SKU perlu sinkronisasi</p>
+                </div>
+            </article>
+
+            <article class="panel kpi-card p-5">
+                <div class="flex items-start justify-between">
+                    <div class="kpi-icon safe"><i data-lucide="trending-down" class="h-5 w-5"></i></div>
+                    <span class="badge" style="background:#edf3eb;color:#57745b">Estimasi 7 hari</span>
+                </div>
+                <p class="mt-4 text-sm font-semibold text-stone-500">Potensi Kehilangan Omzet</p>
+                <p id="kpiRiskValue" class="mt-1 text-2xl font-extrabold tracking-tight text-espresso">Rp 0</p>
+                <p class="mt-1 text-xs text-stone-400">Estimasi SKU dengan stok ≤ stok minimum</p>
+            </article>
+        </section>
+
+        <section class="grid gap-6 xl:grid-cols-5">
+            <article class="panel chart-panel p-5 xl:col-span-3">
+                <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="font-bold text-espresso">Tren Pergerakan &amp; Sinkronisasi</h2>
+                        <p class="mt-1 text-sm text-stone-500">Aktivitas stok selama 7 hari terakhir</p>
+                    </div>
+                    <span class="rounded-lg border border-orange-100 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-coffee">
+                        Inbound · Terjual · Tren rata-rata
+                    </span>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="trendChart" aria-label="Grafik tren pergerakan stok"></canvas>
+                </div>
+            </article>
+
+            <article class="panel chart-panel p-5 xl:col-span-2">
+                <div class="mb-5">
+                    <h2 class="font-bold text-espresso">Kesehatan Stok</h2>
+                    <p class="mt-1 text-sm text-stone-500">Distribusi status stok seluruh SKU</p>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="healthChart" aria-label="Grafik distribusi kesehatan stok"></canvas>
+                </div>
+            </article>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="flex flex-col gap-4 border-b border-orange-100 p-5 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-espresso">Analisis &amp; Sinkronisasi Stok</h2>
+                    <p class="mt-1 text-sm text-stone-500">Cari, filter, dan sinkronkan stok produk.</p>
+                </div>
+                <button id="exportButton" class="export-button" type="button">
+                    <i data-lucide="download" class="h-4 w-4" aria-hidden="true"></i>
+                    Export CSV
+                </button>
+            </div>
+
+            <div class="grid gap-3 border-b border-orange-100 bg-orange-50/50 p-5 md:grid-cols-3">
+                <label class="relative block">
+                    <span class="sr-only">Cari nama produk atau SKU</span>
+                    <i data-lucide="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"></i>
+                    <input id="searchInput" class="filter-control pl-10" type="search" placeholder="Cari nama produk atau SKU...">
+                </label>
+
+                <label>
+                    <span class="sr-only">Filter kategori</span>
+                    <select id="categoryFilter" class="filter-control">
+                        <option value="">Semua Kategori</option>
+                        <option value="Elektronik">Elektronik</option>
+                        <option value="Fashion">Fashion</option>
+                        <option value="Groceries">Groceries</option>
+                    </select>
+                </label>
+
+                <label>
+                    <span class="sr-only">Filter status sinkronisasi</span>
+                    <select id="statusFilter" class="filter-control">
+                        <option value="">Semua Status</option>
+                        <option value="Synced">Synced</option>
+                        <option value="Discrepancy">Discrepancy</option>
+                        <option value="Out of Stock">Out of Stock</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="table-scroll">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr>
+                            <th>Produk &amp; SKU</th>
+                            <th>Kategori</th>
+                            <th class="text-right">Gudang (ERP)</th>
+                            <th class="text-right">Blibli (Live)</th>
+                            <th class="text-right">Selisih</th>
+                            <th>Status Sinkronisasi</th>
+                            <th>Perputaran</th>
+                            <th class="text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryRows"></tbody>
+                </table>
+
+                <div id="emptyState" class="hidden px-5 py-12 text-center text-sm text-stone-500">
+                    Tidak ada produk yang cocok dengan pencarian atau filter.
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2 border-t border-orange-100 px-5 py-4 text-xs text-stone-400 sm:flex-row sm:items-center sm:justify-between">
+                <p>Data demo disimpan di browser ini menggunakan localStorage.</p>
+                <p id="rowCount">0 SKU ditampilkan</p>
+            </div>
+        </section>
+
+        <footer class="pb-3 text-center text-xs text-stone-400">
+            Blibli Inventory Sync Dashboard · Static GitHub Pages Demo
+        </footer>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script>
+        /*
+         * Data awal konversi dari data/mock_inventory.php.
+         * localStorage dipakai agar perubahan demo bertahan setelah refresh.
+         */
+        const DEFAULT_INVENTORY = [
+            {
+                id: 1,
+                sku: 'ELC-001',
+                name: 'Wireless Noise Cancelling Headphones',
+                category: 'Elektronik',
+                warehouse_stock: 42,
+                blibli_stock: 42,
+                min_stock: 10,
+                price: 1299000,
+                average_daily_sales: 3,
+                movement: 'Fast Moving'
+            },
+            {
+                id: 2,
+                sku: 'ELC-002',
+                name: 'Smart Watch Series 5',
+                category: 'Elektronik',
+                warehouse_stock: 18,
+                blibli_stock: 15,
+                min_stock: 8,
+                price: 899000,
+                average_daily_sales: 2,
+                movement: 'Fast Moving'
+            },
+            {
+                id: 3,
+                sku: 'ELC-003',
+                name: 'Portable Bluetooth Speaker',
+                category: 'Elektronik',
+                warehouse_stock: 0,
+                blibli_stock: 0,
+                min_stock: 6,
+                price: 549000,
+                average_daily_sales: 2,
+                movement: 'Slow Moving'
+            },
+            {
+                id: 4,
+                sku: 'ELC-004',
+                name: 'USB-C Fast Charger 65W',
+                category: 'Elektronik',
+                warehouse_stock: 7,
+                blibli_stock: 9,
+                min_stock: 10,
+                price: 229000,
+                average_daily_sales: 4,
+                movement: 'Fast Moving'
+            },
+            {
+                id: 5,
+                sku: 'FAS-001',
+                name: 'Classic Cotton Oversized T-Shirt',
+                category: 'Fashion',
+                warehouse_stock: 120,
+                blibli_stock: 120,
+                min_stock: 20,
+                price: 159000,
+                average_daily_sales: 8,
+                movement: 'Fast Moving'
+            },
+            {
+                id: 6,
+                sku: 'FAS-002',
+                name: 'Everyday Canvas Backpack',
+                category: 'Fashion',
+                warehouse_stock: 14,
+                blibli_stock: 11,
+                min_stock: 10,
+                price: 349000,
+                average_daily_sales: 2,
+                movement: 'Slow Moving'
+            },
+            {
+                id: 7,
+                sku: 'FAS-003',
+                name: 'Minimalist Leather Wallet',
+                category: 'Fashion',
+                warehouse_stock: 5,
+                blibli_stock: 0,
+                min_stock: 8,
+                price: 279000,
+                average_daily_sales: 3,
+                movement: 'Fast Moving'
+            },
+            {
+                id: 8,
+                sku: 'FAS-004',
+                name: 'Lightweight Running Jacket',
+                category: 'Fashion',
+                warehouse_stock: 60,
+                blibli_stock: 60,
+                min_stock: 12,
+                price: 529000,
+                average_daily_sales: 2,
+                movement: 'Slow Moving'
+            },
+            {
+                id: 9,
+                sku: 'GRC-001',
+                name: 'Premium Arabica Coffee Beans 1kg',
+                category: 'Groceries',
+                warehouse_stock: 9,
+                blibli_stock: 12,
+                min_stock: 15,
+                price: 189000,
+                average_daily_sales: 6,
+                movement: 'Fast Moving'
+            },
+            {
+                id: 10,
+                sku: 'GRC-002',
+                name: 'Organic Honey 500ml',
+                category: 'Groceries',
+                warehouse_stock: 36,
+                blibli_stock: 36,
+                min_stock: 10,
+                price: 99000,
+                average_daily_sales: 3,
+                movement: 'Slow Moving'
+            },
+            {
+                id: 11,
+                sku: 'GRC-003',
+                name: 'Almond Milk Unsweetened 1L',
+                category: 'Groceries',
+                warehouse_stock: 3,
+                blibli_stock: 2,
+                min_stock: 12,
+                price: 45000,
+                average_daily_sales: 7,
+                movement: 'Fast Moving'
+            },
+            {
+                id: 12,
+                sku: 'GRC-004',
+                name: 'Whole Grain Cereal Family Pack',
+                category: 'Groceries',
+                warehouse_stock: 75,
+                blibli_stock: 75,
+                min_stock: 15,
+                price: 79000,
+                average_daily_sales: 4,
+                movement: 'Slow Moving'
+            }
+        ];
+
+        const STORAGE_KEY = 'blibli_inventory_dashboard_v1';
+        const LAST_SYNC_KEY = 'blibli_inventory_last_sync_v1';
+        const DEMO_SYNC_INDEX_KEY = 'blibli_inventory_demo_sync_index_v1';
+
+        const TREND = {
+            labels: ['19 Nov', '20 Nov', '21 Nov', '22 Nov', '23 Nov', '24 Nov', '25 Nov'],
+            inbound: [24, 31, 28, 36, 30, 42, 38],
+            sold: [19, 25, 22, 30, 27, 35, 29]
+        };
+
+        let inventory = loadInventory();
+        let trendChart = null;
+        let healthChart = null;
+        let toastTimer = null;
+
+        const elements = {
+            rows: document.getElementById('inventoryRows'),
+            emptyState: document.getElementById('emptyState'),
+            search: document.getElementById('searchInput'),
+            category: document.getElementById('categoryFilter'),
+            status: document.getElementById('statusFilter'),
+            export: document.getElementById('exportButton'),
+            syncAll: document.getElementById('syncAllButton'),
+            toast: document.getElementById('toast'),
+            lastSync: document.getElementById('lastSync')
+        };
+
+        function loadInventory() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+
+                if (!saved) {
+                    return structuredClone(DEFAULT_INVENTORY);
+                }
+
+                const parsed = JSON.parse(saved);
+
+                if (!Array.isArray(parsed)) {
+                    return structuredClone(DEFAULT_INVENTORY);
+                }
+
+                return parsed.map((item, index) => ({
+                    ...DEFAULT_INVENTORY[index % DEFAULT_INVENTORY.length],
+                    ...item
+                }));
+            } catch (error) {
+                console.warn('Tidak dapat membaca inventory dari localStorage:', error);
+                return structuredClone(DEFAULT_INVENTORY);
+            }
+        }
+
+        function saveInventory() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory));
+            } catch (error) {
+                showToast('Browser tidak dapat menyimpan data lokal.', true);
+                console.error(error);
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            })[char]);
+        }
+
+        function formatRupiah(value) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                maximumFractionDigits: 0
+            }).format(Number(value) || 0);
+        }
+
+        function getSyncStatus(item) {
+            if (Number(item.blibli_stock) <= 0) return 'Out of Stock';
+            if (Number(item.warehouse_stock) !== Number(item.blibli_stock)) return 'Discrepancy';
+            return 'Synced';
+        }
+
+        function getHealthStatus(item) {
+            const liveStock = Number(item.blibli_stock) || 0;
+            const minimum = Number(item.min_stock) || 0;
+            const warehouseStock = Number(item.warehouse_stock) || 0;
+
+            if (liveStock <= 0) return 'Out of Stock';
+            if (liveStock <= minimum) return 'Low Stock';
+            if (warehouseStock >= Math.max(minimum * 3, minimum + 1)) return 'Overstock';
+            return 'Healthy';
+        }
+
+        function calculateMetrics() {
+            const result = {
+                total: inventory.length,
+                synced: 0,
+                lowStock: 0,
+                discrepancies: 0,
+                riskValue: 0,
+                health: {
+                    Healthy: 0,
+                    'Low Stock': 0,
+                    'Out of Stock': 0,
+                    Overstock: 0
+                }
+            };
+
+            inventory.forEach((item) => {
+                const liveStock = Number(item.blibli_stock) || 0;
+                const minimum = Number(item.min_stock) || 0;
+
+                if (getSyncStatus(item) === 'Synced') result.synced++;
+                if (liveStock < minimum) result.lowStock++;
+
+                if (Number(item.warehouse_stock) !== liveStock) {
+                    result.discrepancies++;
+                }
+
+                if (liveStock <= minimum) {
+                    result.riskValue +=
+                        (Number(item.price) || 0)
+                        * (Number(item.average_daily_sales) || 0)
+                        * 7;
+                }
+
+                result.health[getHealthStatus(item)]++;
+            });
+
+            result.syncRate = result.total > 0
+                ? Math.round((result.synced / result.total) * 1000) / 10
+                : 0;
+
+            return result;
+        }
+
+        function showToast(message, isError = false) {
+            elements.toast.textContent = message;
+            elements.toast.classList.toggle('error', isError);
+            elements.toast.classList.add('show');
+
+            window.clearTimeout(toastTimer);
+            toastTimer = window.setTimeout(() => {
+                elements.toast.classList.remove('show');
+            }, 3200);
+        }
+
+        function filteredInventory() {
+            const query = elements.search.value.trim().toLocaleLowerCase('id-ID');
+            const category = elements.category.value;
+            const status = elements.status.value;
+
+            return inventory.filter((item) => {
+                const text = `${item.name} ${item.sku}`.toLocaleLowerCase('id-ID');
+
+                return (!query || text.includes(query))
+                    && (!category || item.category === category)
+                    && (!status || getSyncStatus(item) === status);
+            });
+        }
+
+        function renderTable() {
+            const filtered = filteredInventory();
+
+            elements.rows.innerHTML = filtered.map((item) => {
+                const warehouse = Number(item.warehouse_stock) || 0;
+                const live = Number(item.blibli_stock) || 0;
+                const variance = warehouse - live;
+                const status = getSyncStatus(item);
+
+                const statusClass = {
+                    'Synced': 'badge-synced',
+                    'Discrepancy': 'badge-discrepancy',
+                    'Out of Stock': 'badge-oos'
+                }[status];
+
+                const movementClass = item.movement === 'Fast Moving'
+                    ? 'badge-fast'
+                    : 'badge-slow';
+
+                return `
+                    <tr>
+                        <td>
+                            <p class="font-bold text-stone-800">${escapeHtml(item.name)}</p>
+                            <p class="mt-1 text-xs font-medium tracking-wide text-stone-400">${escapeHtml(item.sku)}</p>
+                        </td>
+                        <td class="text-stone-600">${escapeHtml(item.category)}</td>
+                        <td class="text-right font-semibold">${warehouse}</td>
+                        <td class="text-right font-semibold">${live}</td>
+                        <td class="text-right font-semibold ${variance === 0 ? 'text-stone-400' : 'text-orange-700'}">
+                            ${variance > 0 ? '+' : ''}${variance}
+                        </td>
+                        <td><span class="badge ${statusClass}">${escapeHtml(status)}</span></td>
+                        <td><span class="text-xs font-semibold ${movementClass}">${escapeHtml(item.movement)}</span></td>
+                        <td class="text-right">
+                            <button
+                                type="button"
+                                class="secondary-button"
+                                data-force-sync="${Number(item.id)}"
+                            >
+                                Force Sync
+                            </button>
+                        </td>
+                    </tr>`;
+            }).join('');
+
+            elements.emptyState.classList.toggle('hidden', filtered.length > 0);
+            document.getElementById('rowCount').textContent =
+                `${filtered.length} SKU ditampilkan`;
+        }
+
+        function renderMetrics() {
+            const metrics = calculateMetrics();
+
+            document.getElementById('kpiSynced').textContent =
+                `${metrics.synced}/${metrics.total}`;
+            document.getElementById('kpiSyncRate').textContent =
+                `${metrics.syncRate}% Synced`;
+            document.getElementById('kpiLowStock').textContent =
+                metrics.lowStock;
+            document.getElementById('kpiDiscrepancies').textContent =
+                metrics.discrepancies;
+            document.getElementById('kpiRiskValue').textContent =
+                formatRupiah(metrics.riskValue);
+
+            if (healthChart) {
+                healthChart.data.datasets[0].data = [
+                    metrics.health.Healthy,
+                    metrics.health['Low Stock'],
+                    metrics.health['Out of Stock'],
+                    metrics.health.Overstock
+                ];
+                healthChart.update();
+            }
+        }
+
+        function updateLastSync(isoDate) {
+            if (!isoDate) {
+                elements.lastSync.textContent = 'Belum ada sinkronisasi';
+                return;
+            }
+
+            const date = new Date(isoDate);
+            elements.lastSync.textContent = Number.isNaN(date.getTime())
+                ? 'Waktu tidak valid'
+                : new Intl.DateTimeFormat('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }).format(date);
+        }
+
+        function setLoading(button, loading, text) {
+            if (!button) return;
+
+            button.disabled = loading;
+
+            if (loading) {
+                button.innerHTML = `
+                    <span class="loading-spinner" aria-hidden="true"></span>
+                    <span>Syncing...</span>`;
+            } else if (button === elements.syncAll) {
+                button.innerHTML = `
+                    <i data-lucide="refresh-cw" class="h-4 w-4" aria-hidden="true"></i>
+                    <span>${escapeHtml(text)}</span>`;
+            } else {
+                button.textContent = text;
+            }
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        function simulateHealthChange() {
+            if (!inventory.length) return null;
+
+            let index = 0;
+
+            try {
+                index = Number(localStorage.getItem(DEMO_SYNC_INDEX_KEY)) || 0;
+            } catch {
+                index = 0;
+            }
+
+            index %= inventory.length;
+            const item = inventory[index];
+            const currentStock = Number(item.warehouse_stock) || 0;
+            const minimum = Number(item.min_stock) || 0;
+
+            // Bergantian antara habis dan stok di atas minimum agar
+            // distribusi kesehatan bisa terlihat berubah pada demo.
+            const nextStock = currentStock <= 0
+                ? Math.max(1, minimum + 1)
+                : 0;
+
+            item.warehouse_stock = nextStock;
+            item.blibli_stock = nextStock;
+
+            try {
+                localStorage.setItem(
+                    DEMO_SYNC_INDEX_KEY,
+                    String((index + 1) % inventory.length)
+                );
+            } catch {
+                // Aplikasi tetap dapat dipakai selama halaman terbuka.
+            }
+
+            return item.sku;
+        }
+
+        async function syncAll() {
+            const button = elements.syncAll;
+            setLoading(button, true, 'Sync Now');
+
+            // Jeda kecil untuk memberi umpan balik visual saat demo.
+            await new Promise((resolve) => window.setTimeout(resolve, 450));
+
+            const changedSku = simulateHealthChange();
+
+            // Samakan seluruh stok live dengan stok gudang.
+            inventory.forEach((item) => {
+                item.blibli_stock = Number(item.warehouse_stock) || 0;
+            });
+
+            saveInventory();
+
+            const now = new Date().toISOString();
+
+            try {
+                localStorage.setItem(LAST_SYNC_KEY, now);
+            } catch {
+                // Sinkronisasi tetap diperbarui di tampilan.
+            }
+
+            updateLastSync(now);
+            renderTable();
+            renderMetrics();
+
+            setLoading(button, false, 'Sync Now');
+            showToast(
+                changedSku
+                    ? `Demo sync berhasil. Stok ${changedSku} diperbarui dan grafik kesehatan dihitung ulang.`
+                    : 'Sinkronisasi demo berhasil.'
+            );
+        }
+
+        async function forceSync(id, button) {
+            setLoading(button, true, 'Syncing...');
+            await new Promise((resolve) => window.setTimeout(resolve, 300));
+
+            const item = inventory.find((product) => Number(product.id) === Number(id));
+
+            if (!item) {
+                setLoading(button, false, 'Force Sync');
+                showToast('Produk tidak ditemukan.', true);
+                return;
+            }
+
+            item.blibli_stock = Number(item.warehouse_stock) || 0;
+            saveInventory();
+
+            const now = new Date().toISOString();
+
+            try {
+                localStorage.setItem(LAST_SYNC_KEY, now);
+            } catch {
+                // Perubahan inventory tetap ditampilkan.
+            }
+
+            updateLastSync(now);
+            renderTable();
+            renderMetrics();
+            showToast(`Stok ${item.sku} berhasil disinkronkan.`);
+        }
+
+        function safeCsvCell(value) {
+            let text = String(value ?? '');
+
+            // Hindari sel CSV yang dievaluasi sebagai formula spreadsheet.
+            if (/^[\s]*[=+\-@]/.test(text)) {
+                text = `'${text}`;
+            }
+
+            return `"${text.replace(/"/g, '""')}"`;
+        }
+
+        function exportCsv() {
+            const filtered = filteredInventory();
+            const headers = [
+                'SKU',
+                'Nama Produk',
+                'Kategori',
+                'Stok Gudang (ERP)',
+                'Stok Blibli (Live)',
+                'Selisih',
+                'Status Sinkronisasi',
+                'Status Perputaran',
+                'Stok Minimum',
+                'Harga (IDR)'
+            ];
+
+            const lines = [headers.map(safeCsvCell).join(',')];
+
+            filtered.forEach((item) => {
+                const warehouse = Number(item.warehouse_stock) || 0;
+                const live = Number(item.blibli_stock) || 0;
+
+                lines.push([
+                    item.sku,
+                    item.name,
+                    item.category,
+                    warehouse,
+                    live,
+                    warehouse - live,
+                    getSyncStatus(item),
+                    item.movement,
+                    item.min_stock,
+                    item.price
+                ].map(safeCsvCell).join(','));
+            });
+
+            // BOM UTF-8 agar karakter Indonesia terbaca dengan baik di spreadsheet.
+            const blob = new Blob(
+                ['\uFEFF', lines.join('\r\n')],
+                { type: 'text/csv;charset=utf-8;' }
+            );
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `blibli-inventory-report-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+
+            showToast(`${filtered.length} SKU diekspor ke CSV.`);
+        }
+
+        function createTrendChart() {
+            const canvas = document.getElementById('trendChart');
+            if (!canvas || !window.Chart) return;
+
+            const movement = TREND.inbound.map((value, index) =>
+                (value + TREND.sold[index]) / 2
+            );
+
+            trendChart = new Chart(canvas.getContext('2d'), {
+                data: {
+                    labels: TREND.labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Stok masuk (unit)',
+                            data: TREND.inbound,
+                            backgroundColor: 'rgba(211, 166, 79, .84)',
+                            borderColor: '#D3A64F',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                            maxBarThickness: 36,
+                            yAxisID: 'y',
+                            order: 2
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Terjual di Blibli (unit)',
+                            data: TREND.sold,
+                            backgroundColor: 'rgba(102, 128, 107, .86)',
+                            borderColor: '#66806B',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                            maxBarThickness: 36,
+                            yAxisID: 'y',
+                            order: 2
+                        },
+                        {
+                            type: 'line',
+                            label: 'Tren rata-rata pergerakan (unit)',
+                            data: movement,
+                            borderColor: '#C87552',
+                            backgroundColor: '#C87552',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBorderWidth: 2,
+                            pointBorderColor: '#FFFDFA',
+                            tension: .3,
+                            fill: false,
+                            yAxisID: 'y',
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                boxWidth: 8,
+                                padding: 18
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label(context) {
+                                    const value = Number(context.parsed.y) || 0;
+                                    return `${context.dataset.label}: ${Number(value.toFixed(1))} unit`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#77685D' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Jumlah unit',
+                                color: '#77685D'
+                            },
+                            ticks: {
+                                precision: 0,
+                                color: '#77685D'
+                            },
+                            grid: {
+                                color: 'rgba(120, 104, 93, .12)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createHealthChart() {
+            const canvas = document.getElementById('healthChart');
+            if (!canvas || !window.Chart) return;
+
+            const metrics = calculateMetrics();
+
+            healthChart = new Chart(canvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Healthy', 'Low Stock', 'Out of Stock', 'Overstock'],
+                    datasets: [{
+                        data: [
+                            metrics.health.Healthy,
+                            metrics.health['Low Stock'],
+                            metrics.health['Out of Stock'],
+                            metrics.health.Overstock
+                        ],
+                        backgroundColor: ['#66806B', '#D3A64F', '#C87552', '#8A705D'],
+                        borderColor: '#FFFDFA',
+                        borderWidth: 3,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                boxWidth: 8,
+                                padding: 18
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label(context) {
+                                    return `${context.label}: ${Number(context.parsed) || 0} SKU`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function setupAnimations() {
+            if (window.gsap && window.ScrollTrigger) {
+                gsap.registerPlugin(ScrollTrigger);
+
+                const title = document.getElementById('dashboardTitle');
+
+                if (title && !title.dataset.split) {
+                    const words = title.textContent.trim().split(/\s+/);
+                    title.innerHTML = words
+                        .map((word) => `<span class="title-word">${escapeHtml(word)}</span>`)
+                        .join(' ');
+                    title.dataset.split = 'true';
+
+                    gsap.fromTo(
+                        title.querySelectorAll('.title-word'),
+                        { y: 18, opacity: 0 },
+                        {
+                            y: 0,
+                            opacity: 1,
+                            duration: .55,
+                            stagger: .045,
+                            ease: 'power2.out',
+                            scrollTrigger: {
+                                trigger: title,
+                                start: 'top 88%',
+                                once: true
+                            }
+                        }
+                    );
+                }
+
+                gsap.utils.toArray('.kpi-card, .chart-panel, .table-panel').forEach((card) => {
+                    gsap.fromTo(
+                        card,
+                        { y: 18, opacity: .65 },
+                        {
+                            y: 0,
+                            opacity: 1,
+                            duration: .55,
+                            ease: 'power2.out',
+                            scrollTrigger: {
+                                trigger: card,
+                                start: 'top 92%',
+                                once: true
+                            }
+                        }
+                    );
+                });
+            }
+
+            if (window.Lenis) {
+                const lenis = new Lenis({
+                    duration: 1.05,
+                    smoothWheel: true,
+                    wheelMultiplier: .9
+                });
+
+                lenis.on('scroll', () => {
+                    if (window.ScrollTrigger) {
+                        ScrollTrigger.update();
+                    }
+                });
+
+                if (window.gsap) {
+                    gsap.ticker.add((time) => {
+                        lenis.raf(time * 1000);
+                    });
+                    gsap.ticker.lagSmoothing(0);
+                } else {
+                    const raf = (time) => {
+                        lenis.raf(time);
+                        requestAnimationFrame(raf);
+                    };
+                    requestAnimationFrame(raf);
+                }
+            }
+        }
+
+        elements.rows.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-force-sync]');
+            if (!button) return;
+
+            forceSync(Number(button.dataset.forceSync), button);
+        });
+
+        elements.syncAll.addEventListener('click', syncAll);
+        elements.export.addEventListener('click', exportCsv);
+        elements.search.addEventListener('input', renderTable);
+        elements.category.addEventListener('change', renderTable);
+        elements.status.addEventListener('change', renderTable);
+
+        // Tampilkan waktu sinkronisasi terakhir jika tersimpan.
+        try {
+            updateLastSync(localStorage.getItem(LAST_SYNC_KEY));
+        } catch {
+            updateLastSync(null);
+        }
+
+        renderTable();
+        createTrendChart();
+        createHealthChart();
+        renderMetrics();
+        setupAnimations();
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    </script>
+
+    <!-- Motion: animasi mikro tambahan pada kartu KPI, dengan fallback aman. -->
+    <script type="module">
+        import { animate } from 'https://cdn.jsdelivr.net/npm/motion@12.23.12/+esm';
+
+        document.querySelectorAll('.kpi-card').forEach((card) => {
+            card.addEventListener('pointerenter', () => {
+                animate(card, { scale: 1.012 }, { duration: 0.18 });
+            });
+
+            card.addEventListener('pointerleave', () => {
+                animate(card, { scale: 1 }, { duration: 0.18 });
+            });
+        });
+    </script>
+</body>
+</html>
